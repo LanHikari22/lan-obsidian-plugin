@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "lan-obsidian-plugin",
+	"name": "Lan Obsidian Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Obsidian plugin for my note taking process",
+	"author": "Mohammed Alzakariya",
+	"authorUrl": "https://github.com/LanHikari22",
+	"fundingUrl": "https://buymeacoffee.com/lan22h",
 	"isDesktopOnly": false
 }
