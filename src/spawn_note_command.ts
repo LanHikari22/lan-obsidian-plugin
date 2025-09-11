@@ -8,6 +8,7 @@ import {
 	Notice,
     normalizePath,
     TFile,
+    TFolder,
 } from "obsidian";
 
 import * as path from "path";
@@ -17,7 +18,7 @@ import * as bignote from "./bignote";
 
 import * as comm from "./common";
 
-async function run_with_user_input(editor: Editor, view: MarkdownView, selected_context: string, new_note_name: string) {
+async function run_with_user_input(editor: Editor, view: MarkdownView, opt_selected_bignote_root_folder: TFolder | undefined, selected_context: string, new_note_name: string) {
     const opt_spawner_file = view.file;
     if (!opt_spawner_file) {
         new Notice(`Error: Please use this command from within a note to spawn from`);
@@ -27,7 +28,8 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
 
     const spawner_is_index = bignote.is_bignote_index_file(spawner_file);
 
-    if (!spawner_is_index && !bignote.is_bignote_small_note_file(view, spawner_file)) {
+    // We only require it be a small note file if it's not spawned from outside or the index
+    if (!spawner_is_index && !opt_selected_bignote_root_folder && !bignote.is_bignote_small_note_file(view, spawner_file)) {
         new Notice(`Error: Spawner file is not a small note`);
         return;
     }
@@ -36,6 +38,8 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
 
     if (spawner_is_index) {
         opt_index_file = spawner_file;
+    } else if (opt_selected_bignote_root_folder) {
+        opt_index_file = bignote.get_bignote_index_file_from_bignote_root_folder(opt_selected_bignote_root_folder);
     } else {
         opt_index_file = bignote.get_bignote_index_file_from_child(view, spawner_file);
     }
@@ -112,10 +116,7 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
 }
 
 export class InputNoteNameModal extends Modal {
-    editor: Editor;
-    view: MarkdownView;
-
-	constructor(app: App, editor: Editor, view: MarkdownView, onSubmit: (result: string) => void) {
+	constructor(app: App, onSubmit: (result: string) => void) {
 		super(app);
 		this.setTitle("New Note Name (without NNN ID)");
 
@@ -142,11 +143,13 @@ export class InputNoteNameModal extends Modal {
 export class SelectContextTypeModal extends FuzzySuggestModal<string> {
     editor: Editor;
     view: MarkdownView;
+    opt_selected_bignote_root_folder: TFolder | undefined;
 
-	constructor(app: App, editor: Editor, view: MarkdownView) {
+	constructor(app: App, editor: Editor, view: MarkdownView, opt_selected_index_folder: TFolder | undefined) {
         super(app)
         this.editor = editor;
         this.view = view;
+        this.opt_selected_bignote_root_folder = opt_selected_index_folder;
     }
 
 	getItems(): string[] {
@@ -158,12 +161,40 @@ export class SelectContextTypeModal extends FuzzySuggestModal<string> {
 	}
 
 	onChooseItem(item: string, evt: MouseEvent | KeyboardEvent) {
-		new InputNoteNameModal(this.app, this.editor, this.view, (result) => {
-            run_with_user_input(this.editor, this.view, item, result);
+		new InputNoteNameModal(this.app, (result) => {
+            run_with_user_input(this.editor, this.view, this.opt_selected_bignote_root_folder, item, result);
 		}).open();
 	}
 }
 
-export async function run(editor: Editor, view: MarkdownView) {
-	new SelectContextTypeModal(view.app, editor, view).open();
+export class SelectBignoteRootFolderModal extends FuzzySuggestModal<TFolder> {
+    editor: Editor;
+    view: MarkdownView;
+
+	constructor(app: App, editor: Editor, view: MarkdownView) {
+        super(app)
+        this.editor = editor;
+        this.view = view;
+    }
+
+	getItems(): TFolder[] {
+		return bignote.get_all_index_folders_in_vault(this.view);
+	}
+
+	getItemText(item: TFolder): string {
+		return item.name;
+	}
+
+	onChooseItem(item: TFolder, evt: MouseEvent | KeyboardEvent) {
+        new SelectContextTypeModal(this.view.app, this.editor, this.view, /*opt_selected_bignote_root_folder*/ item).open();
+	}
 }
+
+export async function run(editor: Editor, view: MarkdownView) {
+	new SelectContextTypeModal(view.app, editor, view, /*opt_selected_bignote_root_folder*/ undefined).open();
+}
+
+export async function run_from_outside(editor: Editor, view: MarkdownView) {
+    new SelectBignoteRootFolderModal(view.app, editor, view).open();
+}
+

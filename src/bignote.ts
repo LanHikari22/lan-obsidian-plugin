@@ -163,6 +163,24 @@ export function get_bignote_index_file_from_child(
 	return parent_file;
 }
 
+export function get_bignote_index_file_from_bignote_root_folder(folder: TFolder): TFile | undefined {
+    if (!is_bignote_root_folder(folder)) {
+        console.log(`Error: Expected ${folder.name} to be a bignote root folder`);
+        return undefined;
+    }
+
+    for (var i=0; i<folder.children.length; i++) {
+        const child = folder.children[i];
+
+        if (child instanceof TFile && child.basename == folder.name) {
+            return child;
+        }
+    }
+
+    console.log(`Assertion Failed: No index file found in bignote root folder`);
+    return undefined;
+}
+
 /// Checks that the given file complies with the expected folder structure.
 /// and is a small note in it, so it complies with ^concept-small-note-content-requirements
 export function is_bignote_small_note_file(
@@ -236,4 +254,11 @@ export function get_next_triplet_id_for_folder(
     const num_files_in_context_folder = comm.get_folder_child_file_count_non_recursive(context_folder);
 
     return display_triplet_id(num_files_in_context_folder);
+}
+
+export function get_all_index_folders_in_vault(view: MarkdownView): TFolder[] {
+    const folders = view.app.vault.getAllFolders(false)
+        .filter((folder) => is_bignote_root_folder(folder));
+
+    return folders;
 }

@@ -90,6 +90,12 @@ export default class LanPlugin extends Plugin {
 			editorCallback: spawn_note_command.run,
 		});
 
+		this.addCommand({
+			id: "spawn-note-from-outside",
+			name: "Spawn Note From Outside",
+			editorCallback: spawn_note_command.run_from_outside,
+		});
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
