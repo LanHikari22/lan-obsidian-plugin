@@ -7,6 +7,7 @@ import {
 	FuzzySuggestModal,
 	Notice,
     normalizePath,
+    TFile,
 } from "obsidian";
 
 import * as path from "path";
@@ -24,12 +25,21 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
     }
     const spawner_file = opt_spawner_file;
 
-    if (!bignote.is_bignote_small_note_file(view, spawner_file)) {
+    const spawner_is_index = bignote.is_bignote_index_file(spawner_file);
+
+    if (!spawner_is_index && !bignote.is_bignote_small_note_file(view, spawner_file)) {
         new Notice(`Error: Spawner file is not a small note`);
         return;
     }
 
-    const opt_index_file = bignote.get_bignote_index_file_from_child(view, spawner_file);
+    var opt_index_file: TFile | undefined = undefined;
+
+    if (spawner_is_index) {
+        opt_index_file = spawner_file;
+    } else {
+        opt_index_file = bignote.get_bignote_index_file_from_child(view, spawner_file);
+    }
+
     if (!opt_index_file) {
         new Notice(`Error: Failed to retrieve index file`);
         return;
@@ -43,14 +53,14 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
     }
     const bignote_root_folder = opt_bignote_root_folder;
 
-    const opt_context_folder_name = bignote.context_type_heading_to_folder(selected_context);
+    const opt_context_folder_name = bignote.context_type_singular_convert(selected_context, bignote.CONTEXT_TYPE_FOLDERS);
     if (!opt_context_folder_name) {
         new Notice(`Error: Failed to retrieve context folder`);
         return;
     }
     const context_folder_name = opt_context_folder_name;
 
-    const opt_context_block_identifier_code = bignote.context_type_heading_to_block_identifier_code(selected_context);
+    const opt_context_block_identifier_code = bignote.context_type_singular_convert(selected_context, bignote.CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE);
     if (!opt_context_block_identifier_code) {
         new Notice(`Error: Failed to retrieve context block identifier code`);
         return;
@@ -85,7 +95,7 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
 
     // We add a "status: todo" automatically for all doer context types.
     var automatic_status = "";
-    if (bignote.context_type_heading_is_doer(selected_context)) {
+    if (bignote.context_type_heading_singular_is_doer(selected_context)) {
         automatic_status = `status: todo\n`;
     }
 
@@ -96,7 +106,8 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, selected_
         automatic_status +
         `---\n\n` +
         `Parent: [[${index_file.basename}]]\n\n` +
-        `Spawned in [[${spawner_file.basename}#${block_identifier}|${block_identifier}]]\n\n`
+        `Spawned in [[${spawner_file.basename}#${block_identifier}|${block_identifier}]]\n\n` +
+        `# Journal`
     );
 }
 
@@ -139,7 +150,7 @@ export class SelectContextTypeModal extends FuzzySuggestModal<string> {
     }
 
 	getItems(): string[] {
-		return bignote.CONTEXT_TYPE_HEADINGS;
+		return bignote.CONTEXT_TYPE_HEADINGS_SINGULAR;
 	}
 
 	getItemText(item: string): string {

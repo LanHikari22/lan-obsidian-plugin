@@ -22,6 +22,16 @@ export const CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE = [
 	"task",
 ];
 
+export const CONTEXT_TYPE_HEADINGS_SINGULAR = [
+	"Entry",
+	"HowTo",
+	"Idea",
+	"Inference",
+	"Investigation",
+	"Issue",
+	"Task",
+];
+
 
 export const CONTEXT_TYPE_HEADINGS = [
 	"Entries",
@@ -33,51 +43,34 @@ export const CONTEXT_TYPE_HEADINGS = [
 	"Tasks",
 ];
 
-export function context_type_heading_to_folder(
-	heading: string
+export function context_type_singular_convert(
+	context_type: string,
+    new_type_strings: string[]
 ): string | undefined {
-	const index = CONTEXT_TYPE_HEADINGS.findIndex((elem) => elem === heading);
+	const index = CONTEXT_TYPE_HEADINGS_SINGULAR.findIndex((elem) => elem === context_type);
 	if (index == -1) {
 		return undefined;
 	}
 
-	if (index < 0 || index >= CONTEXT_TYPE_FOLDERS.length) {
+	if (index < 0 || index >= new_type_strings.length) {
 		console.log(
-			`Error: Unexpected value for ${index} for context type folder lookup`
+			`Error: Unexpected value for ${index} for context type lookup`
 		);
         return undefined;
 	}
 
-	return CONTEXT_TYPE_FOLDERS[index];
+	return new_type_strings[index];
 }
 
-export function context_type_heading_to_block_identifier_code(
-	heading: string
-): string | undefined {
-	const index = CONTEXT_TYPE_HEADINGS.findIndex((elem) => elem === heading);
-	if (index == -1) {
-		return undefined;
-	}
-
-	if (index < 0 || index >= CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE.length) {
-		console.log(
-			`Failed Assertion: Unexpected value for ${index} for context block identifier lookup`
-		);
-        return undefined;
-	}
-
-	return CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE[index];
-}
-
-export function context_type_heading_is_doer(heading: string) {
+export function context_type_heading_singular_is_doer(heading: string) {
     const doers = [
-        // "Entries",
-        "HowTos",
-        // "Ideas",
-        // "Inferences",
-        "Investigations",
-        "Issues",
-        "Tasks",
+        // "Entry",
+        "HowTo",
+        // "Idea",
+        // "Inference",
+        "Investigation",
+        "Issue",
+        "Task",
     ];
 
     return doers.contains(heading);
