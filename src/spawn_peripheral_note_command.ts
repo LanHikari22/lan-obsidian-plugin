@@ -113,7 +113,7 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, opt_selec
         automatic_status +
         `---\n\n` +
         `Parent: [[${index_file.basename}]]\n\n` +
-        `Spawned by: [[${spawner_file.basename}]] \n\n` +
+        `Spawned by: [[${spawner_file.basename}]]\n\n` +
         `Spawned in: [[${spawner_file.basename}#${block_identifier}|${block_identifier}]]\n\n` +
         `# Journal`
     );
