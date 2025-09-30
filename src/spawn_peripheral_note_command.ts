@@ -13,7 +13,7 @@ import {
 
 import * as path from "path";
 
-import * as bignote from "./bignote";
+import * as bignote from "./notecluster";
 
 
 import * as comm from "./common";
@@ -26,10 +26,10 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, opt_selec
     }
     const spawner_file = opt_spawner_file;
 
-    const spawner_is_index = bignote.is_bignote_index_file(spawner_file);
+    const spawner_is_index = bignote.is_cluster_root_file(spawner_file);
 
     // We only require it be a small note file if it's not spawned from outside or the index
-    if (!spawner_is_index && !opt_selected_bignote_root_folder && !bignote.is_bignote_small_note_file(view, spawner_file)) {
+    if (!spawner_is_index && !opt_selected_bignote_root_folder && !bignote.is_cluster_non_index_file(view, spawner_file)) {
         new Notice(`Error: Spawner file is not a small note`);
         return;
     }
@@ -39,9 +39,9 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, opt_selec
     if (spawner_is_index) {
         opt_index_file = spawner_file;
     } else if (opt_selected_bignote_root_folder) {
-        opt_index_file = bignote.get_bignote_index_file_from_bignote_root_folder(opt_selected_bignote_root_folder);
+        opt_index_file = bignote.get_cluster_core_file_from_cluster_root_folder(opt_selected_bignote_root_folder);
     } else {
-        opt_index_file = bignote.get_bignote_index_file_from_child(view, spawner_file);
+        opt_index_file = bignote.get_cluster_core_file_from_peripheral(view, spawner_file);
     }
 
     if (!opt_index_file) {
@@ -103,14 +103,18 @@ async function run_with_user_input(editor: Editor, view: MarkdownView, opt_selec
         automatic_status = `status: todo\n`;
     }
 
+    var context_type = selected_context.toLowerCase();
+
     await fs.write(new_file_path, 
         `---\n` +
         `parent: "[[${index_file.basename}]]"\n` +
         `spawned_by: "[[${spawner_file.basename}]]"\n` +
+        `context_type: ${context_type}\n` + 
         automatic_status +
         `---\n\n` +
         `Parent: [[${index_file.basename}]]\n\n` +
-        `Spawned in [[${spawner_file.basename}#${block_identifier}|${block_identifier}]]\n\n` +
+        `Spawned by: [[${spawner_file.basename}]] \n\n` +
+        `Spawned in: [[${spawner_file.basename}#${block_identifier}|${block_identifier}]]\n\n` +
         `# Journal`
     );
 }

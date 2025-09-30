@@ -57,7 +57,7 @@ export function insert_text_at_editor_cursor_in_own_line(editor: Editor, text: s
     editor.replaceRange("\n" + text + "\n", cursor);
 }
 
-export function get_folder_child_folder(folder: TFolder, child_name: string): TFolder | undefined {
+export function get_child_folder_by_name(folder: TFolder, child_name: string): TFolder | undefined {
     for (var i=0; i<folder.children.length; i++) {
         const child = folder.children[i];
 

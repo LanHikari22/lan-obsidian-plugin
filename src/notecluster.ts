@@ -62,7 +62,7 @@ export function context_type_singular_convert(
 	return new_type_strings[index];
 }
 
-export function context_type_heading_singular_is_doer(heading: string) {
+export function context_type_heading_singular_is_doer(heading: string): boolean {
     const doers = [
         // "Entry",
         "HowTo",
@@ -90,7 +90,7 @@ export function folder_has_note_of_same_name(folder: TFolder): boolean {
 	return false;
 }
 
-export function is_bignote_root_folder(folder: TFolder): boolean {
+export function is_cluster_root_folder(folder: TFolder): boolean {
 	if (
 		!folder_has_note_of_same_name(folder) ||
 		comm.get_folder_child_file_count_non_recursive(folder) != 1
@@ -101,7 +101,7 @@ export function is_bignote_root_folder(folder: TFolder): boolean {
 	return true;
 }
 
-export function is_bignote_category_folder(folder: TFolder): boolean {
+export function is_cluster_category_folder(folder: TFolder): boolean {
 	if (!CONTEXT_TYPE_FOLDERS.includes(folder.name)) {
 		return false;
 	}
@@ -112,7 +112,7 @@ export function is_bignote_category_folder(folder: TFolder): boolean {
 	}
 	const parent = opt_parent;
 
-	if (!is_bignote_root_folder(parent)) {
+	if (!is_cluster_root_folder(parent)) {
 		return false;
 	}
 
@@ -120,16 +120,16 @@ export function is_bignote_category_folder(folder: TFolder): boolean {
 }
 
 /// Checks that the given file complies with the expected folder structure.
-/// and is its index file.
-/// See ^concept-big-note-folder-structure in docs/spec.md
-export function is_bignote_index_file(file: TFile): boolean {
+/// and is its root file.
+/// See ^concept-cluster-root-folder-structure in docs/spec.md
+export function is_cluster_root_file(file: TFile): boolean {
 	const opt_parent = file.parent;
 	if (!opt_parent) {
 		return false;
 	}
 	const parent = opt_parent;
 
-	if (!is_bignote_root_folder(parent)) {
+	if (!is_cluster_root_folder(parent)) {
 		return false;
 	}
 
@@ -140,22 +140,22 @@ export function is_bignote_index_file(file: TFile): boolean {
 	return true;
 }
 
-export function get_bignote_index_file_from_child(
+export function get_cluster_core_file_from_peripheral(
 	view: MarkdownView,
-	file: TFile
+	peripheral_file: TFile
 ): TFile | undefined {
 	const opt_parent_file = comm.get_file_frontmatter_note_property(
 		view,
-		file,
+		peripheral_file,
 		"parent"
 	);
 	if (!opt_parent_file) {
-        console.log(`Error: Could not retrieve frontmatter note property parent for ${file.name}`);
+        console.log(`Error: Could not retrieve frontmatter note property parent for ${peripheral_file.name}`);
 		return undefined;
 	}
 	const parent_file = opt_parent_file;
 
-	if (!is_bignote_index_file(parent_file)) {
+	if (!is_cluster_root_file(parent_file)) {
         console.log(`Error: ${parent_file.name} is not a bignote index file`);
 		return undefined;
 	}
@@ -163,8 +163,8 @@ export function get_bignote_index_file_from_child(
 	return parent_file;
 }
 
-export function get_bignote_index_file_from_bignote_root_folder(folder: TFolder): TFile | undefined {
-    if (!is_bignote_root_folder(folder)) {
+export function get_cluster_core_file_from_cluster_root_folder(folder: TFolder): TFile | undefined {
+    if (!is_cluster_root_folder(folder)) {
         console.log(`Error: Expected ${folder.name} to be a bignote root folder`);
         return undefined;
     }
@@ -183,7 +183,7 @@ export function get_bignote_index_file_from_bignote_root_folder(folder: TFolder)
 
 /// Checks that the given file complies with the expected folder structure.
 /// and is a small note in it, so it complies with ^concept-small-note-content-requirements
-export function is_bignote_small_note_file(
+export function is_cluster_non_index_file(
 	view: MarkdownView,
 	file: TFile
 ): boolean {
@@ -194,12 +194,12 @@ export function is_bignote_small_note_file(
 	}
 	const parent_folder = opt_parent;
 
-	if (!is_bignote_category_folder(parent_folder)) {
+	if (!is_cluster_category_folder(parent_folder)) {
         console.log(`Error: ${parent_folder.name} is not a bignote category folder`);
 		return false;
 	}
 
-	const opt_parent_file = get_bignote_index_file_from_child(view, file);
+	const opt_parent_file = get_cluster_core_file_from_peripheral(view, file);
 	if (!opt_parent_file) {
         console.log(`Error: Could not get big note index file for ${file.name}`);
 		return false;
@@ -245,7 +245,7 @@ export function get_next_triplet_id_for_folder(
     }
     const bignote_root_folder = opt_bignote_root_folder;
 
-    const opt_context_folder = comm.get_folder_child_folder(bignote_root_folder, context_folder_name);
+    const opt_context_folder = comm.get_child_folder_by_name(bignote_root_folder, context_folder_name);
     if (!opt_context_folder) {
         return undefined;
     }
@@ -258,7 +258,7 @@ export function get_next_triplet_id_for_folder(
 
 export function get_all_index_folders_in_vault(view: MarkdownView): TFolder[] {
     const folders = view.app.vault.getAllFolders(false)
-        .filter((folder) => is_bignote_root_folder(folder));
+        .filter((folder) => is_cluster_root_folder(folder));
 
     return folders;
 }

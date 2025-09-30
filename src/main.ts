@@ -9,7 +9,7 @@ import {
 	Setting,
 } from "obsidian";
 
-import * as spawn_note_command from "./spawn_note_command";
+import * as spawn_note_command from "./spawn_peripheral_note_command";
 
 // Remember to rename these classes and interfaces!
 
@@ -85,14 +85,14 @@ export default class LanPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "spawn-note",
-			name: "Spawn Note",
+			id: "spawn-peripheral-note",
+			name: "Spawn Peripheral Note",
 			editorCallback: spawn_note_command.run,
 		});
 
 		this.addCommand({
-			id: "spawn-note-from-outside",
-			name: "Spawn Note From Outside",
+			id: "spawn-peripheral-note-from-outside",
+			name: "Spawn Peripheral Note From Outside",
 			editorCallback: spawn_note_command.run_from_outside,
 		});
 
