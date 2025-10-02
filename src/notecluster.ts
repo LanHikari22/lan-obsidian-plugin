@@ -3,43 +3,51 @@ import { MarkdownView, TFile, TFolder } from "obsidian";
 import * as comm from "./common";
 
 export const CONTEXT_TYPE_FOLDERS = [
+	"concepts",
 	"entries",
 	"howtos",
 	"ideas",
 	"inferences",
 	"investigations",
 	"issues",
+	"judgments",
 	"tasks",
 ];
 
 export const CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE = [
+	"cncpt",
 	"entry",
 	"howto",
 	"idea",
 	"infer",
 	"invst",
 	"issue",
+	"judgment",
 	"task",
 ];
 
 export const CONTEXT_TYPE_HEADINGS_SINGULAR = [
+	"Concept",
 	"Entry",
 	"HowTo",
 	"Idea",
 	"Inference",
 	"Investigation",
 	"Issue",
+	"Judgment",
 	"Task",
 ];
 
 
 export const CONTEXT_TYPE_HEADINGS = [
+	"Concepts",
 	"Entries",
 	"HowTos",
 	"Ideas",
 	"Inferences",
 	"Investigations",
 	"Issues",
+	"Judgments",
 	"Tasks",
 ];
 
@@ -64,12 +72,14 @@ export function context_type_singular_convert(
 
 export function context_type_heading_singular_is_doer(heading: string): boolean {
     const doers = [
+		// "Concept",
         // "Entry",
         "HowTo",
         // "Idea",
         // "Inference",
         "Investigation",
         "Issue",
+		"Judgment",
         "Task",
     ];
 
