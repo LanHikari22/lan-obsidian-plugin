@@ -22,7 +22,7 @@ export const CONTEXT_TYPE_BLOCK_IDENTIFIER_CODE = [
 	"infer",
 	"invst",
 	"issue",
-	"judgment",
+	"jdgmt",
 	"task",
 ];
 
