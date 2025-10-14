@@ -10,6 +10,7 @@ import {
 } from "obsidian";
 
 import * as spawn_note_command from "./spawn_peripheral_note_command";
+import * as update_cluster_index_command from "./update_cluster_index_command";
 
 // Remember to rename these classes and interfaces!
 
@@ -94,6 +95,12 @@ export default class LanPlugin extends Plugin {
 			id: "spawn-peripheral-note-from-outside",
 			name: "Spawn Peripheral Note From Outside",
 			editorCallback: spawn_note_command.run_from_outside,
+		});
+
+		this.addCommand({
+			id: "update-cluster-index",
+			name: "Update Cluster Index",
+			editorCallback: update_cluster_index_command.run,
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
