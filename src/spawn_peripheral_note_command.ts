@@ -50,7 +50,7 @@ async function run_with_user_input(
 	if (spawner_is_index) {
 		opt_index_file = spawner_file;
 	} else if (opt_selected_bignote_root_folder) {
-		opt_index_file = notecluster.get_core_file_from_cluster_root_folder(
+		opt_index_file = notecluster.get_core_file_from_cluster_folder(
 			opt_selected_bignote_root_folder
 		);
 	} else {

@@ -32,5 +32,5 @@ export async function delete_index_and_spawn_trees_headings(core_file: TFile) {
         return mut_new_content;
     })();
 
-    await fs.write(core_file.path, new_content);
+    await fs.write(core_file.path, new_content.trim());
 }

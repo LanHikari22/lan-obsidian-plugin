@@ -79,9 +79,9 @@ export function context_type_from_singular(s: string): ContextType | undefined {
 		return ContextType.Investigation;
 	} else if (s_lower === "issue") {
 		return ContextType.Issue;
-	} else if (s_lower === "Judgment") {
+	} else if (s_lower === "judgment") {
 		return ContextType.Judgment;
-	} else if (s_lower === "Task") {
+	} else if (s_lower === "task") {
 		return ContextType.Task;
 	} else {
 		return undefined;
@@ -199,7 +199,7 @@ export function is_category_folder(folder: TFolder): boolean {
 	}
 
 	const opt_parent = folder.parent;
-	if (!opt_parent) {
+	if (opt_parent == undefined) {
 		return false;
 	}
 	const parent = opt_parent;
@@ -230,7 +230,7 @@ export class CategoryFolder {
 /// See ^concept-cluster-folder-structure in docs/spec.md
 export function is_core_file(file: TFile): boolean {
 	const opt_parent = file.parent;
-	if (!opt_parent) {
+	if (opt_parent == undefined) {
 		return false;
 	}
 	const parent = opt_parent;
@@ -287,7 +287,7 @@ export function get_core_file_from_peripheral_file(
 	return parent_file;
 }
 
-export function get_core_file_from_cluster_root_folder(
+export function get_core_file_from_cluster_folder(
 	folder: TFolder
 ): TFile | undefined {
 	if (!is_cluster_folder(folder)) {
@@ -309,19 +309,33 @@ export function get_core_file_from_cluster_root_folder(
 	return undefined;
 }
 
-export function get_current_core_file(view: MarkdownView): TFile | undefined {
+export function get_current_core_file(view: MarkdownView): CoreFile | undefined {
 	const opt_cur_file = view.file;
 
-	if (!opt_cur_file) {
+	if (opt_cur_file == undefined) {
 		return undefined;
 	}
 
 	const cur_file = opt_cur_file;
 
-	if (is_core_file(cur_file)) {
-		return cur_file;
+	let opt_core_file = CoreFile.new(cur_file);
+
+	if (opt_core_file != undefined) {
+		return opt_core_file
 	} else if (is_peripheral_file(view, cur_file)) {
-		return get_core_file_from_peripheral_file(view, cur_file);
+		let opt_file = get_core_file_from_peripheral_file(view, cur_file);
+		if (opt_file == undefined) {
+			return undefined;
+		}
+		let file = opt_file;
+
+		let opt_core_file = CoreFile.new(file);
+		if (opt_core_file == undefined) {
+			return undefined;
+		}
+		let core_file = opt_core_file;
+
+		return core_file;
 	} else {
 		return undefined;
 	}
@@ -331,7 +345,7 @@ export function get_current_core_file(view: MarkdownView): TFile | undefined {
 /// and is a peripheral note in it, so it complies with ^concept-peripheral-note-content-requirements in docs/spec.md
 export function is_peripheral_file(view: MarkdownView, file: TFile): boolean {
 	const opt_parent = file.parent;
-	if (!opt_parent) {
+	if (opt_parent == undefined) {
 		console.log(`Error: Failed to retrieve parent folder for ${file.name}`);
 		return false;
 	}
@@ -345,7 +359,7 @@ export function is_peripheral_file(view: MarkdownView, file: TFile): boolean {
 	}
 
 	const opt_parent_file = get_core_file_from_peripheral_file(view, file);
-	if (!opt_parent_file) {
+	if (opt_parent_file == undefined) {
 		console.log(
 			`Error: Could not get big note index file for ${file.name}`
 		);
@@ -354,7 +368,7 @@ export function is_peripheral_file(view: MarkdownView, file: TFile): boolean {
 	const parent_file = opt_parent_file;
 
 	const opt_grandparent_folder = parent_folder.parent;
-	if (!opt_grandparent_folder) {
+	if (opt_grandparent_folder == undefined) {
 		console.log(`Error: Could not get grandparent for ${file.name}`);
 		return false;
 	}
@@ -389,6 +403,7 @@ export enum NoteStatus {
 	Paused,
 	Blocked,
 	Rejected,
+	Skipped,
 	Done,
 }
 
@@ -403,10 +418,11 @@ export function note_status_from_str(s: string): NoteStatus | undefined {
 		return NoteStatus.Blocked;
 	} else if (s_lower === "rejected") {
 		return NoteStatus.Rejected;
+	} else if (s_lower === "skipped") {
+		return NoteStatus.Skipped;
 	} else if (s_lower === "done") {
 		return NoteStatus.Done;
 	} else {
-		console.log(`"${s}" "${s_lower}" howwwww`);
 		return undefined;
 	}
 }
@@ -421,6 +437,8 @@ export function note_status_to_str(status: NoteStatus): string | undefined {
 			return "blocked";
 		case NoteStatus.Rejected:
 			return "rejected";
+		case NoteStatus.Skipped:
+			return "skipped";
 		case NoteStatus.Done:
 			return "done";
 		default:
@@ -513,7 +531,7 @@ export class CompletePeripheralFile {
 		let context_type_s = res_context_type_s;
 
 		let opt_context_type = context_type_from_singular(context_type_s);
-		if (!opt_context_type) {
+		if (opt_context_type == undefined) {
 			return new FnErr(FnErrTy.InvalidContextType, [
 				file,
 				context_type_s,
@@ -529,10 +547,13 @@ export class CompletePeripheralFile {
 
 		let opt_status: NoteStatus | undefined;
 		if (res_status_s instanceof comm.IError) {
+			console.log(
+				`Could not get frontmatter property status: ${res_status_s}`
+			);
 			opt_status = undefined;
 		} else {
 			let opt_status1 = note_status_from_str(res_status_s);
-			if (!opt_status1) {
+			if (opt_status1 == undefined) {
 				return new FnErr(FnErrTy.InvalidNoteStatus, [
 					file,
 					res_status_s,
@@ -595,7 +616,7 @@ export function get_next_triplet_id_for_folder(
 	}
 
 	const opt_cluster_folder = core_file.parent;
-	if (!opt_cluster_folder) {
+	if (opt_cluster_folder == undefined) {
 		return new FnErr(FnErrTy.NoParentForCorefile, [core_file]);
 	}
 	const cluster_folder = opt_cluster_folder;
@@ -604,7 +625,7 @@ export function get_next_triplet_id_for_folder(
 		cluster_folder,
 		context_folder_name
 	);
-	if (!opt_context_folder) {
+	if (opt_context_folder == undefined) {
 		return new FnErr(FnErrTy.NotAContextFolder, [context_folder_name]);
 	}
 	const context_folder = opt_context_folder;
@@ -657,7 +678,7 @@ export function get_all_category_folders_for_cluster(
 
 		if (child instanceof TFolder) {
 			let opt_category_folder = CategoryFolder.new(child);
-			if (!opt_category_folder) {
+			if (opt_category_folder == undefined) {
 				return new FnErr(FnErrTy.NonCategoryFolderInCluster, [
 					child,
 					cluster_folder,
@@ -680,17 +701,15 @@ export enum GetAllCompletePeripheralFilesForClusterErrorType {
 
 export class GetAllCompletePeripheralFilesForClusterError extends comm.IError<GetAllCompletePeripheralFilesForClusterErrorType> {
 	to_str(): string {
-		let FnErrTy = GetAllCompletePeripheralFilesForClusterErrorType;
-
 		switch (this.type) {
-			case FnErrTy.FailedToGetCategoryFolders:
+			case GetAllCompletePeripheralFilesForClusterErrorType.FailedToGetCategoryFolders:
 				return `Failed to get category folders: ${this.data[0]}`;
-			case FnErrTy.CategoryFolderContainsNonFiles:
+			case GetAllCompletePeripheralFilesForClusterErrorType.CategoryFolderContainsNonFiles:
 				return `Category folder ${this.data[0]} contains non files`;
-			case FnErrTy.InvalidCompletePeripheralFile:
-				return `Not a valid complete peripheral file in Category folder ${
+			case GetAllCompletePeripheralFilesForClusterErrorType.InvalidCompletePeripheralFile:
+				return `Not a valid complete peripheral file in Category folder "${
 					this.data[0].folder.name
-				}: ${this.data[1].to_str()}`;
+				}": ${this.data[1].to_str()}`;
 			default:
 				return `Unhandled Error Type`;
 		}
@@ -732,9 +751,9 @@ export function get_all_complete_peripheral_files_for_cluster(
 						res_peripheral_file,
 					]);
 				}
-				let periphreal_file = res_peripheral_file;
+				let peripheral_file = res_peripheral_file;
 
-				mut_results.push(periphreal_file);
+				mut_results.push(peripheral_file);
 			} else {
 				return new FnErr(FnErrTy.CategoryFolderContainsNonFiles, [
 					category_folder,
@@ -764,7 +783,7 @@ export class MarkdownFile {
 	}
 }
 
-export type NoteFile = MarkdownFile | CoreFile | PeripheralFile;
+export type NoteFile = MarkdownFile | CoreFile | CompletePeripheralFile;
 
 export enum ComputeIndexForClusterInternalErrorType {
 	FailedToDisplayStatus,
@@ -828,10 +847,10 @@ export function compute_index_for_cluster(
 	for (var i = 0; i < peripheral_files.length; i++) {
 		let file = peripheral_files[i];
 
-		let status_s = (() => {
-			if (file.opt_status) {
+		let res_status_s = (() => {
+			if (file.opt_status != undefined) {
 				let opt_status_s = note_status_to_str(file.opt_status);
-				if (!opt_status_s) {
+				if (opt_status_s == undefined) {
 					return new FnErr(FnErrTy.InternalError, [
 						new IntFnErr(IntFnErrTy.FailedToDisplayStatus, []),
 					]);
@@ -841,9 +860,13 @@ export function compute_index_for_cluster(
 				return "";
 			}
 		})();
+		if (res_status_s instanceof comm.IError) {
+			return res_status_s;
+		}
+		let status_s = res_status_s;
 
 		let opt_context_type_s = context_type_to_str(file.context_type);
-		if (!opt_context_type_s) {
+		if (opt_context_type_s == undefined) {
 			return new FnErr(FnErrTy.InternalError, [
 				new IntFnErr(IntFnErrTy.FailedToDisplayContextType, []),
 			]);
@@ -857,9 +880,9 @@ export function compute_index_for_cluster(
 		}
 
 		if (status_s != "") {
-			mut_result += `${status_s} [[${file.file.name}]]\n\n`;
+			mut_result += `${status_s} [[${file.file.basename}]]\n\n`;
 		} else {
-			mut_result += `[[${file.file.name}]]\n\n`;
+			mut_result += `[[${file.file.basename}]]\n\n`;
 		}
 	}
 
@@ -903,7 +926,7 @@ export class GetAllNotesWithChildrenForClusterError extends comm.IError<GetAllNo
 	}
 }
 
-export function get_all_notes_with_spawned_for_cluster(
+export function get_all_root_notes_with_spawned_for_cluster(
 	view: MarkdownView,
 	cluster_folder: ClusterFolder
 ): NoteFileWithSpawned[] | GetAllNotesWithChildrenForClusterError {
@@ -950,7 +973,6 @@ export function get_all_notes_with_spawned_for_cluster(
 						peripheral_file,
 					]);
 				}
-
 				spawner_with_spawned.spawned.push(peripheral_file);
 			} else {
 				// We need to create a spawner
@@ -975,7 +997,7 @@ export function get_all_notes_with_spawned_for_cluster(
 
 					return undefined;
 				})();
-				if (!opt_spawner_note) {
+				if (opt_spawner_note == undefined) {
 					return new FnErr(FnErrTy.InvalidSpawnerForPeripheral, [
 						peripheral_file,
 					]);
@@ -994,34 +1016,6 @@ export function get_all_notes_with_spawned_for_cluster(
 			// There is no spawner, so just add this peripheral
 			let res = new NoteFileWithSpawned(peripheral_file);
 			mut_results.push(res);
-		}
-	}
-
-	return mut_results;
-}
-
-export function get_spawn_roots(
-	note_files: NoteFileWithSpawned[]
-): NoteFileWithSpawned[] {
-	var mut_results = [];
-
-	for (var i = 0; i < note_files.length; i++) {
-		let note_file1 = note_files[i];
-
-		let is_spawned = (() => {
-			for (var j = 0; j < note_files.length; j++) {
-				let note_file2 = note_files[j];
-
-				if (note_file1.file.file.path === note_file2.file.file.path) {
-					return false;
-				}
-			}
-
-			return true;
-		})();
-
-		if (!is_spawned) {
-			mut_results.push(note_file1);
 		}
 	}
 
@@ -1062,43 +1056,43 @@ export function display_note_file_for_spawn_trees(
 		var mut_result = "";
 
 		for (var i = 0; i < indent_level; i++) {
-			mut_result += "  ";
+			mut_result += "    ";
 		}
 
 		return mut_result;
 	})();
 
 	if (file instanceof MarkdownFile) {
-		return `${tab_level_s}- [[${file.file.name}]]`;
+		return `${tab_level_s}- [[${file.file.basename}]]`;
 	} else if (file instanceof CoreFile) {
-		return `[[${file.file.name}]]`;
+		return `${tab_level_s}- [[${file.file.basename}]]`;
 	} else if (file instanceof CompletePeripheralFile) {
-		if (file.opt_status) {
+		if (file.opt_status != undefined) {
 			let opt_status_s = note_status_to_str(file.opt_status);
-			if (!opt_status_s) {
+			if (opt_status_s == undefined) {
 				return new FnIntErr(FnIntErrTy.FailedToDisplayStatus, []);
 			}
 			let status_s = opt_status_s.replace("done", "");
 
 			let opt_context_type_s = context_type_to_str(file.context_type);
-			if (!opt_context_type_s) {
+			if (opt_context_type_s == undefined) {
 				return new FnIntErr(FnIntErrTy.FailedToDisplayContextType, []);
 			}
 			let context_type_s = opt_context_type_s;
 
 			if (status_s != "") {
-				return `${tab_level_s}- ${status_s} ${context_type_s} [[${file.file.name}]]`;
+				return `${tab_level_s}- ${status_s} ${context_type_s} [[${file.file.basename}]]`;
 			} else {
-				return `${tab_level_s}- ${context_type_s} [[${file.file.name}]]`;
+				return `${tab_level_s}- ${context_type_s} [[${file.file.basename}]]`;
 			}
 		} else {
 			let opt_context_type_s = context_type_to_str(file.context_type);
-			if (!opt_context_type_s) {
+			if (opt_context_type_s == undefined) {
 				return new FnIntErr(FnIntErrTy.FailedToDisplayContextType, []);
 			}
 			let context_type_s = opt_context_type_s;
 
-			return `${tab_level_s}- ${context_type_s} [[${file.file.name}]]`;
+			return `${tab_level_s}- ${context_type_s} [[${file.file.basename}]]`;
 		}
 	} else {
 		return new FnIntErr(FnIntErrTy.InvalidNoteFile, []);
@@ -1107,7 +1101,6 @@ export function display_note_file_for_spawn_trees(
 
 export enum ComputeSpawnTreesForClusterRecursiveInternalErrorType {
 	FailedToDisplayNoteFile, // (IError)
-	NoteFileNotFound,
 }
 
 export class ComputeSpawnTreesForClusterRecursiveInternalError extends comm.IError<ComputeSpawnTreesForClusterRecursiveInternalErrorType> {
@@ -1115,8 +1108,6 @@ export class ComputeSpawnTreesForClusterRecursiveInternalError extends comm.IErr
 		switch (this.type) {
 			case ComputeSpawnTreesForClusterRecursiveInternalErrorType.FailedToDisplayNoteFile:
 				return `Invariants for display must hold: ${this.data[0].to_str()}`;
-			case ComputeSpawnTreesForClusterRecursiveInternalErrorType.NoteFileNotFound:
-				return `All note files under consideration must be accounted for`;
 			default:
 				return `Invalid InternalError Type`;
 		}
@@ -1146,29 +1137,35 @@ export function compute_spawn_trees_for_cluster_recursive(
 
 	mut_result += item_disp + "\n";
 
+	// Repeat the process for each spawned
 	for (var i = 0; i < cur_note_file.spawned.length; i++) {
-		let opt_child = (() => {
-			let child = cur_note_file.spawned[i];
+		let cur_spawned = cur_note_file.spawned[i];
 
+		let opt_spawned = (() => {
+			// retrieve it as a note file with spawned
 			for (var j = 0; j < note_files.length; j++) {
 				let note_file = note_files[j];
 
-				if (child.file.path === note_file.file.file.path) {
+				if (cur_spawned.file.path === note_file.file.file.path) {
 					return note_file;
 				}
 			}
 
 			return undefined;
 		})();
-		if (!opt_child) {
-			return new IntFnErr(IntFnErrTy.NoteFileNotFound, []);
+		if (opt_spawned == undefined) {
+			// Not a top-level, and only exists through the spawner
+			opt_spawned = new NoteFileWithSpawned(cur_spawned);
 		}
-		let child = opt_child;
+		let spawned = opt_spawned;
+
+		console.log("BBB")
+		console.dir(spawned, { depth: null});
 
 		let res_disp = compute_spawn_trees_for_cluster_recursive(
 			indent_level + 1,
 			note_files,
-			child
+			spawned
 		);
 		if (res_disp instanceof comm.IError) {
 			return res_disp;
@@ -1180,6 +1177,45 @@ export function compute_spawn_trees_for_cluster_recursive(
 
 	return mut_result;
 }
+
+export function get_spawn_roots(
+	note_files: NoteFileWithSpawned[]
+): NoteFileWithSpawned[] {
+	var mut_results = [];
+
+	for (var i=0; i<note_files.length; i++) {
+		let note_file1 = note_files[i];
+
+		let is_spawned = (() => {
+			if (note_file1.file instanceof CompletePeripheralFile && note_file1.file.opt_spawner != undefined) {
+				return true;
+			}
+
+			// It's not enough to check if it's spawned, some entries outside the cluster would be spawned but yet they
+			// would not qualify
+
+			// It must also be included by another item we captured
+			for (var j=0; j < note_files.length; j++) {
+				let spawned = note_files[j].spawned;
+
+				for (var k=0; k < spawned.length; k++) {
+					if (note_file1.file.file.path === spawned[k].file.path) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		})();
+
+		if (!is_spawned) {
+			mut_results.push(note_file1);
+		}
+	}
+
+	return mut_results;
+}
+
 
 export enum ComputeSpawnTreesForClusterInternalErrorType {
 	RecursiveComputeError, // (ClusterFolder, IError)
@@ -1227,7 +1263,7 @@ export function compute_spawn_trees_for_cluster(
 	let IntFnErr = ComputeSpawnTreesForClusterInternalError;
 	let IntFnErrTy = ComputeSpawnTreesForClusterInternalErrorType;
 
-	let res_note_files = get_all_notes_with_spawned_for_cluster(
+	let res_note_files = get_all_root_notes_with_spawned_for_cluster(
 		view,
 		cluster_folder
 	);
@@ -1241,7 +1277,7 @@ export function compute_spawn_trees_for_cluster(
 
 	let spawn_root_notes = get_spawn_roots(note_files);
 
-	var mut_result = "# Spawn Tree\n\n";
+	var mut_result = "# Spawn Trees\n\n";
 
 	for (var i = 0; i < spawn_root_notes.length; i++) {
 		let spawn_root_note = spawn_root_notes[i];
@@ -1255,12 +1291,13 @@ export function compute_spawn_trees_for_cluster(
 			return new FnErr(FnErrTy.InternalError, [
 				new IntFnErr(IntFnErrTy.RecursiveComputeError, [
 					cluster_folder,
+					res_disp,
 				]),
 			]);
 		}
 		let disp = res_disp;
 
-		mut_result += disp;
+		mut_result += disp + "\n";
 	}
 
 	return mut_result;

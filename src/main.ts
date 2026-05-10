@@ -29,40 +29,21 @@ export default class LanPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon(
-			"dice",
-			"Sample Plugin",
-			(evt: MouseEvent) => {
-				// Called when the user clicks the icon.
-				new Notice("This is a notice!");
-			}
-		);
+		// const ribbonIconEl = this.addRibbonIcon(
+		// 	"dice",
+		// 	"Sample Plugin",
+		// 	(evt: MouseEvent) => {
+		// 		// Called when the user clicks the icon.
+		// 		new Notice("This is a notice!");
+		// 	}
+		// );
 
 		// Perform additional things with the ribbon
-		ribbonIconEl.addClass("my-plugin-ribbon-class");
+		// ribbonIconEl.addClass("my-plugin-ribbon-class");
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText("Status Bar Text");
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: "open-sample-modal-simple",
-			name: "Open sample modal (simple)",
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: "sample-editor-command",
-			name: "Sample editor command",
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection("Plugin typed a message!");
-			},
-		});
 
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
@@ -99,8 +80,14 @@ export default class LanPlugin extends Plugin {
 
 		this.addCommand({
 			id: "update-cluster-index",
-			name: "Update Cluster Index",
+			name: "Update Index for Cluster",
 			editorCallback: update_cluster_index_command.run,
+		});
+
+		this.addCommand({
+			id: "update-cluster-index-all",
+			name: "Update Index for All Clusters",
+			editorCallback: update_cluster_index_command.run_all,
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
