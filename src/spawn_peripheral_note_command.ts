@@ -47,12 +47,12 @@ async function run_with_user_input(
 
 	var opt_index_file: TFile | undefined = undefined;
 
-	if (spawner_is_index) {
-		opt_index_file = spawner_file;
-	} else if (opt_selected_bignote_root_folder) {
+	if (opt_selected_bignote_root_folder) {
 		opt_index_file = notecluster.get_core_file_from_cluster_folder(
 			opt_selected_bignote_root_folder
 		);
+	} else if (spawner_is_index) {
+		opt_index_file = spawner_file;
 	} else {
 		opt_index_file = notecluster.get_core_file_from_peripheral_file(
 			view,
